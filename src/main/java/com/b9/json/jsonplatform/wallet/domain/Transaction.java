@@ -25,6 +25,9 @@ public class Transaction {
     @Column(nullable = false)
     private UUID walletId;
 
+    @Column
+    private UUID targetWalletId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TransactionType type; // TOP_UP, WITHDRAWAL, PAYMENT, REFUND
@@ -45,7 +48,12 @@ public class Transaction {
     protected Transaction() {}
 
     public Transaction(UUID walletId, TransactionType type, BigDecimal amount, String description) {
+        this(walletId, null, type, amount, description);
+    }
+
+    public Transaction(UUID walletId, UUID targetWalletId, TransactionType type, BigDecimal amount, String description) {
         this.walletId = walletId;
+        this.targetWalletId = targetWalletId;
         this.type = type;
         this.amount = amount;
         this.status = TransactionStatus.PENDING;
