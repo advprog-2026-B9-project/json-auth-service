@@ -105,4 +105,14 @@ public class TransactionServiceImpl implements TransactionService {
     public Transaction createWithdrawal(UUID walletId, BigDecimal amount) {
         return createTransaction(walletId, TransactionType.WITHDRAWAL, amount, "Withdrawal");
     }
+
+    @Transactional
+    public Transaction createPayment(UUID walletId, UUID targetWalletId, BigDecimal amount) {
+        return createTransaction(walletId, targetWalletId, TransactionType.PAYMENT, amount, "Payment");
+    }
+
+    @Transactional
+    public Transaction createRefund(UUID walletId, UUID targetWalletId, BigDecimal amount) {
+        return createTransaction(walletId, targetWalletId, TransactionType.REFUND, amount, "Refund");
+    }
 }
