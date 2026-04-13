@@ -25,6 +25,16 @@ public class TransactionServiceImpl implements TransactionService {
             BigDecimal amount,
             String description
     ) {
+        return createTransaction(walletId, null, type, amount, description);
+        }
+
+        private Transaction createTransaction(
+            UUID walletId,
+            UUID targetWalletId,
+            TransactionType type,
+            BigDecimal amount,
+            String description
+        ) {
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be greater than zero");
@@ -32,6 +42,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction transaction = new Transaction(
                 walletId,
+            targetWalletId,
                 type,
                 amount,
                 description
