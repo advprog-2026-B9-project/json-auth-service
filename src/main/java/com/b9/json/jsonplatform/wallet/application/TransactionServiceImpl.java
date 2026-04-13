@@ -15,6 +15,8 @@ import java.util.UUID;
 public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private TransactionRepository transactionRepository;
+    @Autowired
+    private WalletService walletService;
 
     @Override
     public Transaction createTransaction(
@@ -45,6 +47,18 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
 
+        if (transaction.getStatus() != TransactionStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING transaction can be updated");
+        }
+
+        if (transaction.getType() == TransactionType.TOP_UP) {
+            walletService.increaseBalance(transaction.getWalletId(), transaction.getAmount());
+        }
+
+        if (transaction.getType() == TransactionType.WITHDRAWAL) {
+            walletService.decreaseBalance(transaction.getWalletId(), transaction.getAmount());
+        }
+
         transaction.setStatus(TransactionStatus.SUCCESS);
 
         return transactionRepository.save(transaction);
@@ -56,6 +70,10 @@ public class TransactionServiceImpl implements TransactionService {
 
         Transaction transaction = transactionRepository.findById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
+
+        if (transaction.getStatus() != TransactionStatus.PENDING) {
+            throw new IllegalStateException("Only PENDING transaction can be updated");
+        }
 
         transaction.setStatus(TransactionStatus.FAILED);
 
