@@ -17,9 +17,8 @@ public class TransactionServiceImpl implements TransactionService {
     private TransactionRepository transactionRepository;
 
     @Override
-    @Transactional
     public Transaction createTransaction(
-            UUID userId,
+            UUID walletId,
             TransactionType type,
             BigDecimal amount,
             String description
@@ -30,7 +29,7 @@ public class TransactionServiceImpl implements TransactionService {
         }
 
         Transaction transaction = new Transaction(
-                userId,
+                walletId,
                 type,
                 amount,
                 description
@@ -64,7 +63,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public List<Transaction> getUserTransactions(UUID userId) {
-        return transactionRepository.findByUserId(userId);
+    public List<Transaction> getWalletTransactions(UUID walletId) {
+        return transactionRepository.findByWalletId(walletId);
     }
 }

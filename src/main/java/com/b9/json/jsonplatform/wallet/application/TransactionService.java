@@ -8,12 +8,12 @@ import java.util.UUID;
 
 public interface TransactionService {
     Transaction createTransaction(
-            UUID userId,
+            UUID walletId,
             TransactionType type,
             BigDecimal amount,
             String description
     );
     Transaction markSuccess(UUID transactionId);
     Transaction markFailed(UUID transactionId);
-    List<Transaction> getUserTransactions(UUID userId);
+    List<Transaction> getWalletTransactions(UUID walletId);
 }
