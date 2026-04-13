@@ -32,12 +32,14 @@ class TransactionServiceTest {
     private TransactionServiceImpl transactionService;
 
     private UUID walletId;
+    private UUID targetWalletId;
     private UUID transactionId;
     private Transaction transaction;
 
     @BeforeEach
     void setUp() {
         walletId = UUID.randomUUID();
+        targetWalletId = UUID.randomUUID();
         transactionId = UUID.randomUUID();
         transaction = new Transaction(
                 walletId,
@@ -125,6 +127,73 @@ class TransactionServiceTest {
         assertEquals(TransactionStatus.SUCCESS, result.getStatus());
         verify(walletService, times(1)).decreaseBalance(walletId, new BigDecimal("50"));
         verify(transactionRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testMarkSuccess_Payment() {
+        Transaction payment = new Transaction(
+                walletId,
+                targetWalletId,
+                TransactionType.PAYMENT,
+                new BigDecimal("75"),
+                "Payment"
+        );
+        payment.setId(transactionId);
+        payment.setStatus(TransactionStatus.PENDING);
+
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(payment));
+        when(transactionRepository.save(any())).thenReturn(payment);
+
+        Transaction result = transactionService.markSuccess(transactionId);
+
+        assertEquals(TransactionStatus.SUCCESS, result.getStatus());
+        verify(walletService, times(1)).decreaseBalance(walletId, new BigDecimal("75"));
+        verify(walletService, times(1)).increaseBalance(targetWalletId, new BigDecimal("75"));
+        verify(transactionRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testMarkSuccess_Refund() {
+        Transaction refund = new Transaction(
+                walletId,
+                targetWalletId,
+                TransactionType.REFUND,
+                new BigDecimal("30"),
+                "Refund"
+        );
+        refund.setId(transactionId);
+        refund.setStatus(TransactionStatus.PENDING);
+
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(refund));
+        when(transactionRepository.save(any())).thenReturn(refund);
+
+        Transaction result = transactionService.markSuccess(transactionId);
+
+        assertEquals(TransactionStatus.SUCCESS, result.getStatus());
+        verify(walletService, times(1)).increaseBalance(walletId, new BigDecimal("30"));
+        verify(walletService, times(1)).decreaseBalance(targetWalletId, new BigDecimal("30"));
+        verify(transactionRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testMarkSuccess_Payment_TargetWalletMissing() {
+        Transaction payment = new Transaction(
+                walletId,
+                TransactionType.PAYMENT,
+                new BigDecimal("25"),
+                "Payment"
+        );
+        payment.setId(transactionId);
+        payment.setStatus(TransactionStatus.PENDING);
+
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(payment));
+
+        assertThrows(IllegalStateException.class,
+                () -> transactionService.markSuccess(transactionId));
+
+        verify(walletService, never()).increaseBalance(any(), any());
+        verify(walletService, never()).decreaseBalance(any(), any());
+        verify(transactionRepository, never()).save(any());
     }
 
     @Test
@@ -250,6 +319,50 @@ class TransactionServiceTest {
         assertNotNull(result);
         assertEquals(TransactionType.WITHDRAWAL, result.getType());
         assertEquals(new BigDecimal("50"), result.getAmount());
+
+        verify(transactionRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testCreatePayment() {
+        Transaction payment = new Transaction(
+                walletId,
+                targetWalletId,
+                TransactionType.PAYMENT,
+                new BigDecimal("80"),
+                "Payment"
+        );
+
+        when(transactionRepository.save(any())).thenReturn(payment);
+
+        Transaction result = transactionService.createPayment(walletId, targetWalletId, new BigDecimal("80"));
+
+        assertNotNull(result);
+        assertEquals(TransactionType.PAYMENT, result.getType());
+        assertEquals(new BigDecimal("80"), result.getAmount());
+        assertEquals(targetWalletId, result.getTargetWalletId());
+
+        verify(transactionRepository, times(1)).save(any());
+    }
+
+    @Test
+    void testCreateRefund() {
+        Transaction refund = new Transaction(
+                walletId,
+                targetWalletId,
+                TransactionType.REFUND,
+                new BigDecimal("40"),
+                "Refund"
+        );
+
+        when(transactionRepository.save(any())).thenReturn(refund);
+
+        Transaction result = transactionService.createRefund(walletId, targetWalletId, new BigDecimal("40"));
+
+        assertNotNull(result);
+        assertEquals(TransactionType.REFUND, result.getType());
+        assertEquals(new BigDecimal("40"), result.getAmount());
+        assertEquals(targetWalletId, result.getTargetWalletId());
 
         verify(transactionRepository, times(1)).save(any());
     }
