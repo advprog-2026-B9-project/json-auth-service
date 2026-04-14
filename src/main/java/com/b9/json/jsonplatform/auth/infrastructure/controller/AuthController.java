@@ -44,4 +44,62 @@ public class AuthController {
     public ResponseEntity<List<User>> listUsers() {
         return ResponseEntity.ok(authService.findAllUsers());
     }
+
+    public static class KycRequest {
+        private String email;
+        private String fullName;
+        private String nikKtp;
+        private String ktpImageUrl;
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getFullName() {
+            return fullName;
+        }
+
+        public void setFullName(String fullName) {
+            this.fullName = fullName;
+        }
+
+        public String getNikKtp() {
+            return nikKtp;
+        }
+
+        public void setNikKtp(String nikKtp) {
+            this.nikKtp = nikKtp;
+        }
+
+        public String getKtpImageUrl() {
+            return ktpImageUrl;
+        }
+
+        public void setKtpImageUrl(String ktpImageUrl) {
+            this.ktpImageUrl = ktpImageUrl;
+        }
+    }
+
+    @PostMapping("/kyc/submit")
+    public ResponseEntity<?> submitKyc(@RequestBody KycRequest request) {
+        if (request.getNikKtp() == null || request.getNikKtp().isBlank()) {
+            return ResponseEntity.badRequest().body("NIK KTP tidak boleh kosong");
+        }
+
+        User updatedUser = authService.submitKyc(
+                request.getEmail(),
+                request.getFullName(),
+                request.getNikKtp(),
+                request.getKtpImageUrl()
+        );
+
+        if (updatedUser != null) {
+            return ResponseEntity.ok(updatedUser);
+        }
+        return ResponseEntity.badRequest().body("User dengan email tersebut tidak ditemukan");
+    }
 }

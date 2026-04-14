@@ -25,4 +25,8 @@ public class User {
     private String role = "TITIPERS";
     private String phoneNumber;
     private String address;
+
+    private String kycStatus = "UNVERIFIED";
+    private String nikKtp;
+    private String ktpImageUrl;
 }
