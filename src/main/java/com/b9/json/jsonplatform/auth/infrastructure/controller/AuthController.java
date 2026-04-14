@@ -102,4 +102,43 @@ public class AuthController {
         }
         return ResponseEntity.badRequest().body("User dengan email tersebut tidak ditemukan");
     }
+
+    public static class KycReviewRequest {
+        private String email;
+        private boolean approved;
+
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public boolean isApproved() {
+            return approved;
+        }
+
+        public void setApproved(boolean approved) {
+            this.approved = approved;
+        }
+    }
+
+    @GetMapping("/admin/kyc/pending")
+    public ResponseEntity<List<User>> getPendingKyc() {
+        return ResponseEntity.ok(authService.findPendingKyc());
+    }
+
+    @PostMapping("/admin/kyc/review")
+    public ResponseEntity<?> reviewKyc(@RequestBody KycReviewRequest request) {
+        User result = authService.reviewKyc(request.getEmail(), request.isApproved());
+
+        if (result != null) {
+            String message = request.isApproved() ?
+                    "KYC Disetujui. Akun berhasil di-upgrade menjadi JASTIPER." :
+                    "KYC Ditolak.";
+            return ResponseEntity.ok(message);
+        }
+        return ResponseEntity.badRequest().body("Gagal melakukan review. Pastikan email benar dan statusnya PENDING_VERIFICATION.");
+    }
 }
