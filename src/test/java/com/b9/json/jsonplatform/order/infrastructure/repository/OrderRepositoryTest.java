@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,13 +19,14 @@ class OrderRepositoryTest {
     @Test
     void testFindByTitiperId() {
         Order order = new Order();
-        order.setTitiperId(99L);
+        UUID titiperId = UUID.randomUUID();
+        order.setTitiperId(titiperId);
         order.setQuantity(2);
         orderRepository.save(order);
 
-        List<Order> found = orderRepository.findByTitiperId(99L);
+        List<Order> found = orderRepository.findByTitiperId(titiperId);
 
         assertFalse(found.isEmpty());
-        assertEquals(99L, found.get(0).getTitiperId());
+        assertEquals(titiperId, found.get(0).getTitiperId());
     }
 }

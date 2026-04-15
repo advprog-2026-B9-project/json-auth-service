@@ -10,6 +10,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -28,12 +29,13 @@ class OrderControllerTest {
     @Test
     void testGetHistoryReturnsOk() throws Exception {
         Order order = new Order();
-        order.setTitiperId(1L);
+        UUID titiperId = UUID.randomUUID();
+        order.setTitiperId(titiperId);
 
-        when(orderService.getTitiperHistory(1L)).thenReturn(Arrays.asList(order));
+        when(orderService.getTitiperHistory(titiperId)).thenReturn(Arrays.asList(order));
 
-        mockMvc.perform(get("/api/orders/history/1"))
+        mockMvc.perform(get("/api/orders/history/" + titiperId.toString()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].titiperId").value(1));
+                .andExpect(jsonPath("$[0].titiperId").value(titiperId.toString()));
     }
 }
