@@ -60,4 +60,13 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.deleteById(id);
     }
+
+    @Override
+    public List<Product> getAllProducts(String name, String jastiper) {
+        if ((name == null || name.isBlank()) && (jastiper == null || jastiper.isBlank())) {
+            return productRepository.findAll();
+        }
+
+        return productRepository.searchProducts(name, jastiper);
+    }
 }

@@ -15,12 +15,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/products")
+@RequestMapping("/api/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -69,5 +70,14 @@ public class ProductController {
 
         productService.deleteProduct(id, ownerUsername);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Product>> getAllProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String jastiper) {
+
+        List<Product> products = productService.getAllProducts(name, jastiper);
+        return new ResponseEntity<>(products, HttpStatus.OK);
     }
 }
