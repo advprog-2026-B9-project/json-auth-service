@@ -1,5 +1,7 @@
 package com.b9.json.jsonplatform.inventory.infrastructure.controller;
 
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.inventory.application.service.ProductService;
 import com.b9.json.jsonplatform.inventory.domain.model.Product;
 
@@ -19,15 +21,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/v1/products")
 public class ProductController {
 
     private final ProductService productService;
+    private final AuthService authService;
 
-    public ProductController(ProductService productService) {
+    public ProductController(ProductService productService, AuthService authService) {
         this.productService = productService;
+        this.authService = authService;
     }
 
     @PostMapping
@@ -73,11 +78,26 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts(
+    public ResponseEntity<List<ProductDetailResponse>> getAllProducts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String jastiper) {
 
         List<Product> products = productService.getAllProducts(name, jastiper);
-        return new ResponseEntity<>(products, HttpStatus.OK);
+        List<User> allUsers = authService.findAllUsers();
+        List<ProductDetailResponse> responseList = products.stream().map(product -> {
+
+            User jastiperProfile = allUsers.stream()
+                    .filter(user -> user.getUsername().equals(product.getOwnerUsername()))
+                    .findFirst()
+                    .orElse(null);
+
+            String fullName = (jastiperProfile != null) ? jastiperProfile.getFullName() : "Anonim";
+            String phoneNumber = (jastiperProfile != null) ? jastiperProfile.getPhoneNumber() : "-";
+
+            return new ProductDetailResponse(product, fullName, phoneNumber);
+
+        }).collect(Collectors.toList());
+
+        return new ResponseEntity<>(responseList, HttpStatus.OK);
     }
 }
