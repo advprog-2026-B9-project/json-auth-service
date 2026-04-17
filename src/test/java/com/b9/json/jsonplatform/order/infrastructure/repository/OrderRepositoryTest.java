@@ -18,15 +18,16 @@ class OrderRepositoryTest {
 
     @Test
     void testFindByTitiperId() {
+        UUID dummyTitiperId = UUID.randomUUID(); // Buat UUID dummy
+
         Order order = new Order();
-        UUID titiperId = UUID.randomUUID();
-        order.setTitiperId(titiperId);
+        order.setTitiperId(dummyTitiperId); // Gunakan UUID
         order.setQuantity(2);
         orderRepository.save(order);
 
-        List<Order> found = orderRepository.findByTitiperId(titiperId);
+        List<Order> found = orderRepository.findByTitiperId(dummyTitiperId); // Gunakan UUID untuk pencarian
 
         assertFalse(found.isEmpty());
-        assertEquals(titiperId, found.get(0).getTitiperId());
+        assertEquals(dummyTitiperId, found.get(0).getTitiperId()); // Pastikan hasil pengecekan menggunakan UUID
     }
 }

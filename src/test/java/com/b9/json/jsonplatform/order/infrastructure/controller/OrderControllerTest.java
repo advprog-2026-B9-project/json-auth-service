@@ -28,14 +28,15 @@ class OrderControllerTest {
 
     @Test
     void testGetHistoryReturnsOk() throws Exception {
+        UUID dummyTitiperId = UUID.randomUUID();
+
         Order order = new Order();
-        UUID titiperId = UUID.randomUUID();
-        order.setTitiperId(titiperId);
+        order.setTitiperId(dummyTitiperId);
 
-        when(orderService.getTitiperHistory(titiperId)).thenReturn(Arrays.asList(order));
+        when(orderService.getTitiperHistory(dummyTitiperId)).thenReturn(Arrays.asList(order));
 
-        mockMvc.perform(get("/api/orders/history/" + titiperId.toString()))
+        mockMvc.perform(get("/api/orders/history/" + dummyTitiperId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].titiperId").value(titiperId.toString()));
+                .andExpect(jsonPath("$[0].titiperId").value(dummyTitiperId.toString()));
     }
 }
