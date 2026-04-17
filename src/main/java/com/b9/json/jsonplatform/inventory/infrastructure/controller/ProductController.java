@@ -39,12 +39,6 @@ public class ProductController {
         return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
     }
 
-    @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        return new ResponseEntity<>(products, HttpStatus.OK);
-    }
-
     @GetMapping("/me")
     public ResponseEntity<List<Product>> getMyProducts(
             @RequestHeader("X-User-Name") String ownerUsername) {
