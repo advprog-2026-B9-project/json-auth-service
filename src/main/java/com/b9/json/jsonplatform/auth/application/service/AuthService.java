@@ -12,4 +12,5 @@ public interface AuthService {
     User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl);
     List<User> findPendingKyc();
     User reviewKyc(String email, boolean approved);
+    User findByUsername(String username);
 }
