@@ -2,8 +2,6 @@ package com.b9.json.jsonplatform.auth.application.service;
 
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
-import com.b9.json.jsonplatform.wallet.domain.Wallet;
-import com.b9.json.jsonplatform.wallet.domain.WalletRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,9 +15,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private WalletRepository walletRepository;
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private String resolveUsername(String requestedUsername, String email) {
@@ -41,14 +36,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(resolveUsername(user.getUsername(), user.getEmail()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        User savedUser = userRepository.save(user);
-
-        // Every newly registered user should have exactly one wallet.
-        if (walletRepository.findByUserId(savedUser.getId()).isEmpty()) {
-            walletRepository.save(new Wallet(savedUser.getId()));
-        }
-
-        return savedUser;
+        return userRepository.save(user);
     }
 
     @Override

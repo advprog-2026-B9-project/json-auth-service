@@ -1,11 +1,14 @@
 package com.b9.json.jsonplatform.auth.infrastructure.controller;
 
 import com.b9.json.jsonplatform.auth.domain.User;
-import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
+import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,46 +20,39 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = AuthController.class)
+@AutoConfigureMockMvc(addFilters = false) // Disables security filters for unit testing the controller
 class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-
+    // 1. Mock the Service, NOT the Repository
     @MockitoBean
-    private UserRepository userRepository;
+    private AuthService authService;
+
+    // 2. Used to convert Java objects into JSON strings for testing
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
-    void testShowRegisterForm() throws Exception {
-        mockMvc.perform(get("/auth/register"))
+    void testRegisterUser() throws Exception {
+        User user = new User();
+        user.setEmail("test@example.com");
+        user.setPassword("password123");
+        user.setUsername("customUser");
+
+        // Tell the mock service what to do when registerUser is called
+        Mockito.when(authService.registerUser(any(User.class))).thenReturn(user);
+
+        // 3. Send a JSON request instead of HTML Form params
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isOk())
-                .andExpect(view().name("Register"))
-                .andExpect(model().attributeExists("user"));
-    }
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.username").value("customUser"));
 
-    @Test
-    void testRegisterUserWithUsername() throws Exception {
-        mockMvc.perform(post("/auth/register")
-                        .param("email", "test@example.com")
-                        .param("password", "password123")
-                        .param("username", "customUser"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/auth/register?success"));
-
-        // Verifikasi bahwa method save dipanggil 1 kali
-        Mockito.verify(userRepository, Mockito.times(1)).save(any(User.class));
-    }
-
-    @Test
-    void testRegisterUserWithoutUsername() throws Exception {
-        // Test skenario ketika username kosong, controller harus memotong string dari email
-        mockMvc.perform(post("/auth/register")
-                        .param("email", "tanpa_user@example.com")
-                        .param("password", "password123"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/auth/register?success"));
-
-        Mockito.verify(userRepository, Mockito.times(1)).save(any(User.class));
+        Mockito.verify(authService, Mockito.times(1)).registerUser(any(User.class));
     }
 
     @Test
@@ -67,12 +63,12 @@ class AuthControllerTest {
         User user2 = new User();
         user2.setUsername("user2");
 
-        // Simulasi jika findAll() dipanggil, kembalikan list buatan kita
-        Mockito.when(userRepository.findAll()).thenReturn(Arrays.asList(user1, user2));
+        Mockito.when(authService.findAllUsers()).thenReturn(Arrays.asList(user1, user2));
 
+        // 4. Expect a JSON array instead of an HTML view
         mockMvc.perform(get("/auth/list"))
                 .andExpect(status().isOk())
-                .andExpect(view().name("UserList"))
-                .andExpect(model().attributeExists("users"));
+                .andExpect(jsonPath("$[0].username").value("user1"))
+                .andExpect(jsonPath("$[1].username").value("user2"));
     }
 }

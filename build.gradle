@@ -45,7 +45,7 @@ dependencies {
 
 sonar {
     properties {
-        property "sonar.projectKey", "advprog-2026-B9-project_json-platform"
+        property "sonar.projectKey", "advprog-2026-B9-project_json-auth-service"
         property "sonar.organization", "advprog-2026-b9-project"
     }
 }
