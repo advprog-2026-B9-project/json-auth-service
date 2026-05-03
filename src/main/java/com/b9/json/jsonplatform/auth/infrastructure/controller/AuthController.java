@@ -2,6 +2,7 @@ package com.b9.json.jsonplatform.auth.infrastructure.controller;
 
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
+import com.b9.json.jsonplatform.auth.application.dto.UserResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,16 +17,21 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> registerUser(@RequestBody User user) {
-        User savedUser = authService.registerUser(user);
-        return ResponseEntity.ok(savedUser);
+    public ResponseEntity<?> registerUser(@RequestBody User user) {
+        try {
+            User savedUser = authService.registerUser(user);
+            return ResponseEntity.ok(new UserResponseDto(savedUser));
+        }
+        catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody User loginData) {
         User loggedInUser = authService.loginUser(loginData.getEmail(), loginData.getPassword());
         if (loggedInUser != null) {
-            return ResponseEntity.ok(loggedInUser);
+            return ResponseEntity.ok(new UserResponseDto(loggedInUser));
         }
         return ResponseEntity.badRequest().body("Email atau password salah!");
     }
@@ -34,14 +40,18 @@ public class AuthController {
     public ResponseEntity<?> updateProfile(@RequestParam String email, @RequestBody User updatedUser) {
         User savedUser = authService.updateProfile(email, updatedUser);
         if (savedUser != null) {
-            return ResponseEntity.ok(savedUser);
+            return ResponseEntity.ok(new UserResponseDto(savedUser));
         }
         return ResponseEntity.badRequest().body("User tidak ditemukan!");
     }
 
     @GetMapping("/list")
-    public ResponseEntity<List<User>> listUsers() {
-        return ResponseEntity.ok(authService.findAllUsers());
+    public ResponseEntity<List<UserResponseDto>> listUsers() {
+        return ResponseEntity.ok(
+                authService.findAllUsers().stream()
+                        .map(UserResponseDto::new)
+                        .toList()
+        );
     }
 
     public static class KycRequest {
@@ -88,16 +98,14 @@ public class AuthController {
         if (request.getNikKtp() == null || request.getNikKtp().isBlank()) {
             return ResponseEntity.badRequest().body("NIK KTP tidak boleh kosong");
         }
-
         User updatedUser = authService.submitKyc(
                 request.getEmail(),
                 request.getFullName(),
                 request.getNikKtp(),
                 request.getKtpImageUrl()
         );
-
         if (updatedUser != null) {
-            return ResponseEntity.ok(updatedUser);
+            return ResponseEntity.ok(new UserResponseDto(updatedUser));
         }
         return ResponseEntity.badRequest().body("User dengan email tersebut tidak ditemukan");
     }
