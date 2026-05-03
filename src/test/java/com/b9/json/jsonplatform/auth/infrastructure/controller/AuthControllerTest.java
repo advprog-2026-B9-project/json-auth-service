@@ -26,11 +26,9 @@ class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    // 1. Mock the Service, NOT the Repository
     @MockitoBean
     private AuthService authService;
 
-    // 2. Used to convert Java objects into JSON strings for testing
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -41,18 +39,15 @@ class AuthControllerTest {
         user.setPassword("password123");
         user.setUsername("customUser");
 
-        // Tell the mock service what to do when registerUser is called
         Mockito.when(authService.registerUser(any(User.class))).thenReturn(user);
 
-        // 3. Send a JSON request instead of HTML Form params
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("test@example.com"))
-                .andExpect(jsonPath("$.username").value("customUser"));
-
-        Mockito.verify(authService, Mockito.times(1)).registerUser(any(User.class));
+                .andExpect(jsonPath("$.username").value("customUser"))
+                .andExpect(jsonPath("$.password").doesNotExist());
     }
 
     @Test
@@ -65,8 +60,7 @@ class AuthControllerTest {
 
         Mockito.when(authService.findAllUsers()).thenReturn(Arrays.asList(user1, user2));
 
-        // 4. Expect a JSON array instead of an HTML view
-        mockMvc.perform(get("/auth/list"))
+        mockMvc.perform(get("/api/auth/list"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].username").value("user1"))
                 .andExpect(jsonPath("$[1].username").value("user2"));
