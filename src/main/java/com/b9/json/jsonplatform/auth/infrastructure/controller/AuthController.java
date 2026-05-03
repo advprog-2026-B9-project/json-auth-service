@@ -76,24 +76,34 @@ public class AuthController {
     }
 
     @GetMapping("/admin/kyc/pending")
-    public ResponseEntity<List<UserResponseDto>> getPendingKyc() {
-        return ResponseEntity.ok(
-                authService.findPendingKyc().stream()
-                        .map(UserResponseDto::new)
-                        .toList()
-        );
+    public ResponseEntity<?> getPendingKyc(@RequestParam String adminEmail) {
+        try {
+            authService.validateAdmin(adminEmail);
+            return ResponseEntity.ok(
+                    authService.findPendingKyc().stream()
+                            .map(UserResponseDto::new)
+                            .toList()
+            );
+        }
+        catch (SecurityException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
     }
 
     @PostMapping("/admin/kyc/review")
     public ResponseEntity<?> reviewKyc(@RequestBody KycReviewRequest request) {
-        User result = authService.reviewKyc(request.getEmail(), request.isApproved());
-
-        if (result != null) {
-            String message = request.isApproved() ?
-                    "KYC Disetujui. Akun berhasil di-upgrade menjadi JASTIPER." :
-                    "KYC Ditolak.";
-            return ResponseEntity.ok(message);
+        try {
+            authService.validateAdmin(request.getAdminEmail());
+            User result = authService.reviewKyc(request.getEmail(), request.isApproved());
+            if (result != null) {
+                String message = request.isApproved() ?
+                        "KYC Disetujui. Akun berhasil di-upgrade menjadi JASTIPER." :
+                        "KYC Ditolak.";
+                return ResponseEntity.ok(message);
+            }
+            return ResponseEntity.badRequest().body("Gagal melakukan review. Pastikan email benar dan statusnya PENDING_VERIFICATION.");
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
         }
-        return ResponseEntity.badRequest().body("Gagal melakukan review. Pastikan email benar dan statusnya PENDING_VERIFICATION.");
     }
 }

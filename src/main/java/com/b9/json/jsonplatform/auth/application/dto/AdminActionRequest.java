@@ -4,8 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class KycReviewRequest {
+public class AdminActionRequest {
     private String adminEmail;
-    private String email;
-    private boolean approved;
 }

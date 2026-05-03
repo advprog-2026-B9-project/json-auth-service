@@ -13,4 +13,5 @@ public interface AuthService {
     List<User> findPendingKyc();
     User reviewKyc(String email, boolean approved);
     User findByUsername(String username);
+    void validateAdmin(String email);
 }

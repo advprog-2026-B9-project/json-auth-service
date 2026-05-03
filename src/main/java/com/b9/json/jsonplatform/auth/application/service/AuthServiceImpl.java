@@ -124,4 +124,12 @@ public class AuthServiceImpl implements AuthService {
     public User findByUsername(String username) {
         return userRepository.findByUsername(username);
     }
+
+    @Override
+    public void validateAdmin(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null || user.getRole() != UserRole.ADMIN) {
+            throw new SecurityException("Akses ditolak. Bukan Admin.");
+        }
+    }
 }
