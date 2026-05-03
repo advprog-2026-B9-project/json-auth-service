@@ -1,9 +1,10 @@
 package com.b9.json.jsonplatform.auth.application.service;
 
+import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
+import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,14 +17,15 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private UserRepository userRepository;
 
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private String resolveUsername(String requestedUsername, String email) {
         if (email == null) {
             return (requestedUsername != null && !requestedUsername.trim().isEmpty())
                     ? requestedUsername
                     : "user_tanpa_email";
         }
-
         if (requestedUsername == null || requestedUsername.trim().isEmpty()) {
             return email.split("@")[0];
         }
@@ -33,9 +35,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public User registerUser(User user) {
+        if (userRepository.findByEmail(user.getEmail()) != null) {
+            throw new IllegalArgumentException("Email sudah terdaftar");
+        }
+
         user.setUsername(resolveUsername(user.getUsername(), user.getEmail()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
         return userRepository.save(user);
     }
 
@@ -51,7 +56,6 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public User updateProfile(String email, User updatedUser) {
         User existingUser = userRepository.findByEmail(email);
-
         if (existingUser != null) {
             existingUser.setFullName(updatedUser.getFullName());
             existingUser.setUsername(resolveUsername(updatedUser.getUsername(), existingUser.getEmail()));
@@ -73,13 +77,21 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
     public User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl) {
         User user = userRepository.findByEmail(email);
         if (user != null) {
+            if (user.getKycStatus() == KycStatus.PENDING_VERIFICATION) {
+                throw new IllegalStateException("KYC sudah diajukan, sedang menunggu review");
+            }
+            if (user.getKycStatus() == KycStatus.VERIFIED) {
+                throw new IllegalStateException("Akun sudah terverifikasi sebagai Jastiper");
+            }
+
             user.setFullName(fullName);
             user.setNikKtp(nikKtp);
             user.setKtpImageUrl(ktpImageUrl);
-            user.setKycStatus("PENDING_VERIFICATION");
+            user.setKycStatus(KycStatus.PENDING_VERIFICATION);
             return userRepository.save(user);
         }
         return null;
@@ -88,20 +100,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public List<User> findPendingKyc() {
         return userRepository.findAll().stream()
-                .filter(u -> "PENDING_VERIFICATION".equals(u.getKycStatus()))
+                .filter(u -> KycStatus.PENDING_VERIFICATION == u.getKycStatus())
                 .toList();
     }
 
     @Override
+    @Transactional
     public User reviewKyc(String email, boolean approved) {
         User user = userRepository.findByEmail(email);
-        if (user != null && "PENDING_VERIFICATION".equals(user.getKycStatus())) {
+        if (user != null && KycStatus.PENDING_VERIFICATION == user.getKycStatus()){
             if (approved) {
-                user.setKycStatus("VERIFIED");
-                user.setRole("JASTIPER");
-            }
-            else {
-                user.setKycStatus("UNVERIFIED");
+                user.setKycStatus(KycStatus.VERIFIED);
+                user.setRole(UserRole.JASTIPER);
+            } else {
+                user.setKycStatus(KycStatus.UNVERIFIED);
             }
             return userRepository.save(user);
         }
