@@ -3,7 +3,8 @@ package com.b9.json.jsonplatform.auth.infrastructure.controller;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.application.dto.UserResponseDto;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.b9.json.jsonplatform.auth.application.dto.KycRequest;
+import com.b9.json.jsonplatform.auth.application.dto.KycReviewRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,8 +14,11 @@ import java.util.List;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
@@ -54,45 +58,6 @@ public class AuthController {
         );
     }
 
-    public static class KycRequest {
-        private String email;
-        private String fullName;
-        private String nikKtp;
-        private String ktpImageUrl;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getFullName() {
-            return fullName;
-        }
-
-        public void setFullName(String fullName) {
-            this.fullName = fullName;
-        }
-
-        public String getNikKtp() {
-            return nikKtp;
-        }
-
-        public void setNikKtp(String nikKtp) {
-            this.nikKtp = nikKtp;
-        }
-
-        public String getKtpImageUrl() {
-            return ktpImageUrl;
-        }
-
-        public void setKtpImageUrl(String ktpImageUrl) {
-            this.ktpImageUrl = ktpImageUrl;
-        }
-    }
-
     @PostMapping("/kyc/submit")
     public ResponseEntity<?> submitKyc(@RequestBody KycRequest request) {
         if (request.getNikKtp() == null || request.getNikKtp().isBlank()) {
@@ -110,30 +75,13 @@ public class AuthController {
         return ResponseEntity.badRequest().body("User dengan email tersebut tidak ditemukan");
     }
 
-    public static class KycReviewRequest {
-        private String email;
-        private boolean approved;
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public boolean isApproved() {
-            return approved;
-        }
-
-        public void setApproved(boolean approved) {
-            this.approved = approved;
-        }
-    }
-
     @GetMapping("/admin/kyc/pending")
-    public ResponseEntity<List<User>> getPendingKyc() {
-        return ResponseEntity.ok(authService.findPendingKyc());
+    public ResponseEntity<List<UserResponseDto>> getPendingKyc() {
+        return ResponseEntity.ok(
+                authService.findPendingKyc().stream()
+                        .map(UserResponseDto::new)
+                        .toList()
+        );
     }
 
     @PostMapping("/admin/kyc/review")
