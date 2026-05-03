@@ -23,12 +23,20 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
+    @Column(nullable = false)
     private String fullName;
-    private String role = "TITIPERS";
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UserRole role = UserRole.TITIPERS;
+
     private String phoneNumber;
     private String address;
 
-    private String kycStatus = "UNVERIFIED";
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private KycStatus kycStatus = KycStatus.UNVERIFIED;
+
     private String nikKtp;
     private String ktpImageUrl;
 }
