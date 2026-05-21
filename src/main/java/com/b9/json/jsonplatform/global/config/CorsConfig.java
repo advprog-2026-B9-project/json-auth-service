@@ -15,10 +15,11 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOrigins(List.of("http://localhost:3000",
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
                 "http://localhost:8080",
-                "https://json-backend-b09.taila1e039.ts.net",
-                "https://json-frontend-two.vercel.app"));
+                "https://thundering-kellie-rafasya-org-60e1472c.koyeb.app",
+                "https://json-b9.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
