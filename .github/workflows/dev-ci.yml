@@ -1,10 +1,10 @@
-name: Staging CI
+name: Dev CI
 
 on:
   push:
-    branches: [ "staging" ]
+    branches: [ "dev" ]
   pull_request:
-    branches: [ "staging" ]
+    branches: [ "dev" ]
 
 jobs:
   build-and-test:
@@ -62,23 +62,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: ./gradlew sonar --info
-
-  deploy-staging:
-    name: Dummy Deploy to Staging
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    environment: staging
-    if: github.ref == 'refs/heads/staging'
-
-    steps:
-      - name: Simulate Staging Deployment
-        run: |
-          echo "Memulai proses deployment ke server STAGING..."
-          echo "Mengunduh artifact build terbaru..."
-          sleep 2
-          echo "Mematikan service backend lama..."
-          sleep 2
-          echo "Memulai json-platform-staging.jar di environment isolasi..."
-          sleep 3
-          echo "Dummy Deployment ke Staging berhasil!"
-          echo "URL Staging: https://staging-b09.json-platform.com"
