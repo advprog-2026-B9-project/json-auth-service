@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,12 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
 
     private final RestTemplate restTemplate;
+
+    @Value("${app.wallet-service.base-url}")
+    private String walletServiceBaseUrl;
+
+    @Value("${app.order-service.base-url}")
+    private String orderServiceBaseUrl;
 
     public AuthServiceImpl(UserRepository userRepository, RestTemplate restTemplate) {
         this.userRepository = userRepository;
@@ -54,13 +61,8 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // TODO: Refactor menggunakan RabbitMQ (Message Broker) - Pola Event-Driven.
-        // 1. Hapus pemanggilan HTTP sinkron (RestTemplate).
-        // 2. Ganti dengan rabbitTemplate.convertAndSend("exchange_name", "routing_key", userId).
-        // 3. Buat listener (RabbitListener) di sisi Wallet Service untuk mengkonsumsi message ini dan mengeksekusi createWallet(userId).
-
         try {
-            String walletServiceUrl = "http://localhost:8082/wallets/users/" + savedUser.getId();
+            String walletServiceUrl = walletServiceBaseUrl + "/wallets/users/" + savedUser.getId();
 
             restTemplate.postForObject(walletServiceUrl, null, String.class);
             System.out.println("Berhasil request pembuatan wallet ke Wallet-Service");
@@ -156,7 +158,7 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) return 0;
 
         try {
-            String orderServiceUrl = "http://localhost:8084/api/orders/jastiper/" + user.getId() + "/stats";
+            String orderServiceUrl = orderServiceBaseUrl + "/api/orders/jastiper/" + user.getId() + "/stats";
             Long count = restTemplate.getForObject(orderServiceUrl, Long.class);
 
             return count != null ? count : 0;
