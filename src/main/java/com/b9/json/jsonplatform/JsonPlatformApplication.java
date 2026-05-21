@@ -2,6 +2,8 @@ package com.b9.json.jsonplatform;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestTemplate;
 import io.github.cdimascio.dotenv.Dotenv;
 
 @SpringBootApplication
@@ -25,5 +27,10 @@ public class JsonPlatformApplication {
         if (value != null && !value.isBlank()) {
             System.setProperty(key, value);
         }
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }

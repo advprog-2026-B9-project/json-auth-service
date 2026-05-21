@@ -1,4 +1,4 @@
-package com.b9.json.jsonplatform.auth.application.dto;
+package com.b9.json.jsonplatform.auth.infrastructure.controller;
 
 import lombok.Getter;
 import lombok.Setter;

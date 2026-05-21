@@ -4,21 +4,30 @@ import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final RestTemplate restTemplate;
+
+    public AuthServiceImpl(UserRepository userRepository, RestTemplate restTemplate) {
+        this.userRepository = userRepository;
+        this.restTemplate = restTemplate;
+        this.passwordEncoder = new BCryptPasswordEncoder();
+    }
 
     private String resolveUsername(String requestedUsername, String email) {
         if (email == null) {
@@ -26,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
                     ? requestedUsername
                     : "user_tanpa_email";
         }
+
         if (requestedUsername == null || requestedUsername.trim().isEmpty()) {
             return email.split("@")[0];
         }
@@ -36,12 +46,30 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public User registerUser(User user) {
         if (userRepository.findByEmail(user.getEmail()) != null) {
-            throw new IllegalArgumentException("Email sudah terdaftar");
+            throw new IllegalArgumentException("Email sudah digunakan");
         }
 
         user.setUsername(resolveUsername(user.getUsername(), user.getEmail()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+
+        User savedUser = userRepository.save(user);
+
+        // TODO: Refactor menggunakan RabbitMQ (Message Broker) - Pola Event-Driven.
+        // 1. Hapus pemanggilan HTTP sinkron (RestTemplate).
+        // 2. Ganti dengan rabbitTemplate.convertAndSend("exchange_name", "routing_key", userId).
+        // 3. Buat listener (RabbitListener) di sisi Wallet Service untuk mengkonsumsi message ini dan mengeksekusi createWallet(userId).
+
+        try {
+            String walletServiceUrl = "http://localhost:8082/wallets/users/" + savedUser.getId();
+
+            restTemplate.postForObject(walletServiceUrl, null, String.class);
+            System.out.println("Berhasil request pembuatan wallet ke Wallet-Service");
+        }
+        catch (Exception e) {
+            System.err.println("Gagal memanggil Wallet Service: " + e.getMessage());
+        }
+
+        return savedUser;
     }
 
     @Override
@@ -72,49 +100,46 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public List<User> findAllUsers() {
-        return userRepository.findAll();
+    public User findById(UUID id) {
+        return userRepository.findById(id).orElse(null);
     }
 
     @Override
-    @Transactional
-    public User submitKyc(String email, String fullName, String nikKtp, String ktpImageUrl) {
-        User user = userRepository.findByEmail(email);
-        if (user != null) {
-            if (user.getKycStatus() == KycStatus.PENDING_VERIFICATION) {
-                throw new IllegalStateException("KYC sudah diajukan, sedang menunggu review");
-            }
-            if (user.getKycStatus() == KycStatus.VERIFIED) {
-                throw new IllegalStateException("Akun sudah terverifikasi sebagai Jastiper");
-            }
+    public List<User> findAllUsers(String status) {
+        List<User> all = userRepository.findAll();
+        if (status == null) return all;
+        return switch (status.toLowerCase()) {
+            case "active"  -> all.stream()
+                    .filter(u -> !u.isBanned())
+                    .filter(u -> !KycStatus.PENDING_VERIFICATION.equals(u.getKycStatus()))
+                    .toList();
+            case "banned"  -> all.stream()
+                    .filter(User::isBanned)
+                    .toList();
+            case "pending" -> all.stream()
+                    .filter(u -> KycStatus.PENDING_VERIFICATION.equals(u.getKycStatus()))
+                    .toList();
+            default -> throw new IllegalArgumentException(
+                    "Status tidak valid: " + status + ". Gunakan: active, banned, pending");
+        };
+    }
 
-            user.setFullName(fullName);
-            user.setNikKtp(nikKtp);
-            user.setKtpImageUrl(ktpImageUrl);
-            user.setKycStatus(KycStatus.PENDING_VERIFICATION);
+    @Override
+    public User demoteJastiper(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user != null && UserRole.JASTIPER.equals(user.getRole())) {
+            user.setRole(UserRole.TITIPERS);
+            user.setKycStatus(KycStatus.UNVERIFIED);
             return userRepository.save(user);
         }
         return null;
     }
 
     @Override
-    public List<User> findPendingKyc() {
-        return userRepository.findAll().stream()
-                .filter(u -> KycStatus.PENDING_VERIFICATION == u.getKycStatus())
-                .toList();
-    }
-
-    @Override
-    @Transactional
-    public User reviewKyc(String email, boolean approved) {
+    public User banUser(String email) {
         User user = userRepository.findByEmail(email);
-        if (user != null && KycStatus.PENDING_VERIFICATION == user.getKycStatus()){
-            if (approved) {
-                user.setKycStatus(KycStatus.VERIFIED);
-                user.setRole(UserRole.JASTIPER);
-            } else {
-                user.setKycStatus(KycStatus.UNVERIFIED);
-            }
+        if (user != null) {
+            user.setBanned(true);
             return userRepository.save(user);
         }
         return null;
@@ -126,10 +151,41 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void validateAdmin(String email) {
+    public long countSuccessfulTransactions(String email) {
         User user = userRepository.findByEmail(email);
-        if (user == null || user.getRole() != UserRole.ADMIN) {
-            throw new SecurityException("Akses ditolak. Bukan Admin.");
+        if (user == null) return 0;
+
+        try {
+            String orderServiceUrl = "http://localhost:8084/api/orders/jastiper/" + user.getId() + "/stats";
+            Long count = restTemplate.getForObject(orderServiceUrl, Long.class);
+
+            return count != null ? count : 0;
         }
+        catch (Exception e) {
+            System.err.println("Gagal mengambil data dari Order Service: " + e.getMessage());
+            return 0;
+        }
+    }
+
+    @Override
+    @Transactional
+    public User addRating(String email, int ratingScore) {
+        if (ratingScore < 1 || ratingScore > 5) {
+            throw new IllegalArgumentException("Rating harus antara 1 dan 5");
+        }
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new IllegalArgumentException("User tidak ditemukan");
+        }
+
+        int currentReviews = user.getTotalReviews();
+        double currentRating = user.getRating();
+        double newRating = ((currentRating * currentReviews) + ratingScore) / (currentReviews + 1);
+
+        user.setRating(Math.round(newRating * 100.0) / 100.0);
+        user.setTotalReviews(currentReviews + 1);
+
+        return userRepository.save(user);
     }
 }
