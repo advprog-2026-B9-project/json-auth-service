@@ -163,11 +163,14 @@ class AuthControllerTest {
     void testSubmitKycSuccess() throws Exception {
         User user = new User();
         user.setKycStatus(KycStatus.PENDING_VERIFICATION);
-        Mockito.when(kycService.submitKyc(anyString(), anyString(), anyString(), anyString())).thenReturn(user);
+
+        Mockito.when(kycService.submitKyc(any(), any(), any(), any())).thenReturn(user);
 
         KycRequest request = new KycRequest();
         request.setEmail("test@example.com");
         request.setNikKtp("1234567890123456");
+        request.setFullName("Budi Santoso");
+        request.setKtpImageUrl("http://image.com/ktp.jpg");
 
         mockMvc.perform(post("/api/v1/auth/kyc/submit")
                         .contentType(MediaType.APPLICATION_JSON)
