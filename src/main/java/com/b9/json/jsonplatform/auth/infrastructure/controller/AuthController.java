@@ -13,12 +13,14 @@
     @RestController
     @RequestMapping("/api/v1/auth")
     public class AuthController {
-    
-        @Autowired
-        private AuthService authService;
-    
-        @Autowired
-        private KycService kycService;
+
+        private final AuthService authService;
+        private final KycService kycService;
+
+        public AuthController(AuthService authService, KycService kycService) {
+            this.authService = authService;
+            this.kycService = kycService;
+        }
     
         @PostMapping("/register")
         public ResponseEntity<?> registerUser(@RequestBody User user) {
