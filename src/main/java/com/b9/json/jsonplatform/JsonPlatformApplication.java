@@ -10,9 +10,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 public class JsonPlatformApplication {
 
     public static void main(String[] args) {
-        String envDir = new java.io.File("backend/.env").exists() ? "./backend" : ".";
         Dotenv dotenv = Dotenv.configure()
-                .directory(envDir)
                 .ignoreIfMissing()
                 .load();
 
