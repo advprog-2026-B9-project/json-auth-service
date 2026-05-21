@@ -16,7 +16,12 @@ class JsonPlatformApplicationTests {
     void testMain() {
         JsonPlatformApplication.main(new String[] {
                 "--spring.profiles.active=test",
-                "--spring.main.web-application-type=none"
+                "--spring.main.web-application-type=none",
+                "--spring.datasource.url=jdbc:h2:mem:testdb_main",
+                "--spring.datasource.driver-class-name=org.h2.Driver",
+                "--spring.datasource.username=sa",
+                "--spring.datasource.password=",
+                "--spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect"
         });
     }
 }
