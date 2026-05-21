@@ -1,11 +1,13 @@
     package com.b9.json.jsonplatform.auth.infrastructure.controller;
     
+    import com.b9.json.jsonplatform.auth.application.dto.LoginRequest;
+    import com.b9.json.jsonplatform.auth.application.dto.RegisterRequest;
+    import com.b9.json.jsonplatform.auth.application.dto.UpdateProfileRequest;
     import com.b9.json.jsonplatform.auth.application.dto.UserInternalResponse;
     import com.b9.json.jsonplatform.auth.application.service.AuthService;
     import com.b9.json.jsonplatform.auth.application.service.KycService;
     import com.b9.json.jsonplatform.auth.domain.User;
     import com.b9.json.jsonplatform.auth.domain.UserRole;
-    import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.http.HttpStatus;
     import org.springframework.http.ResponseEntity;
     import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,7 @@
     @RestController
     @RequestMapping("/api/v1/auth")
     public class AuthController {
+        private static final String FORBIDDEN_ADMIN_MESSAGE = "Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.";
 
         private final AuthService authService;
         private final KycService kycService;
@@ -21,10 +24,18 @@
             this.authService = authService;
             this.kycService = kycService;
         }
-    
+
         @PostMapping("/register")
-        public ResponseEntity<?> registerUser(@RequestBody User user) {
+        public ResponseEntity<Object> registerUser(@RequestBody RegisterRequest request) {
             try {
+                User user = new User();
+                user.setEmail(request.getEmail());
+                user.setPassword(request.getPassword());
+                user.setUsername(request.getUsername());
+                user.setFullName(request.getFullName());
+                user.setPhoneNumber(request.getPhoneNumber());
+                user.setAddress(request.getAddress());
+
                 User savedUser = authService.registerUser(user);
                 return ResponseEntity.ok(savedUser);
             }
@@ -32,19 +43,25 @@
                 return ResponseEntity.badRequest().body(e.getMessage());
             }
         }
-    
+
         @PostMapping("/login")
-        public ResponseEntity<?> loginUser(@RequestBody User loginData) {
+        public ResponseEntity<Object> loginUser(@RequestBody LoginRequest loginData) {
             User loggedInUser = authService.loginUser(loginData.getEmail(), loginData.getPassword());
             if (loggedInUser != null) {
                 return ResponseEntity.ok(loggedInUser);
             }
             return ResponseEntity.badRequest().body("Email atau password salah!");
         }
-    
+
         @PutMapping("/profile")
-        public ResponseEntity<?> updateProfile(@RequestParam String email, @RequestBody User updatedUser) {
-            User savedUser = authService.updateProfile(email, updatedUser);
+        public ResponseEntity<Object> updateProfile(@RequestParam String email, @RequestBody UpdateProfileRequest request) {
+            User updatedUserData = new User();
+            updatedUserData.setFullName(request.getFullName());
+            updatedUserData.setUsername(request.getUsername());
+            updatedUserData.setPhoneNumber(request.getPhoneNumber());
+            updatedUserData.setAddress(request.getAddress());
+
+            User savedUser = authService.updateProfile(email, updatedUserData);
             if (savedUser != null) {
                 return ResponseEntity.ok(savedUser);
             }
@@ -52,7 +69,7 @@
         }
 
         @GetMapping("/list")
-        public ResponseEntity<?> listUsers(@RequestParam(required = false) String status) {
+        public ResponseEntity<Object> listUsers(@RequestParam(required = false) String status) {
             try {
                 return ResponseEntity.ok(authService.findAllUsers(status));
             }
@@ -62,7 +79,7 @@
         }
 
         @GetMapping("/user")
-        public ResponseEntity<?> getUserByEmail(@RequestParam String email) {
+        public ResponseEntity<Object> getUserByEmail(@RequestParam String email) {
             User user = authService.findByEmail(email);
             if (user != null) {
                 PublicProfileResponse response = new PublicProfileResponse();
@@ -90,7 +107,7 @@
     
     
         @PostMapping("/kyc/submit")
-        public ResponseEntity<?> submitKyc(@RequestBody KycRequest request) {
+        public ResponseEntity<Object> submitKyc(@RequestBody KycRequest request) {
             if (request.getNikKtp() == null || request.getNikKtp().isBlank()) {
                 return ResponseEntity.badRequest().body("NIK KTP tidak boleh kosong");
             }
@@ -109,23 +126,23 @@
         }
     
         @GetMapping("/admin/kyc/pending")
-        public ResponseEntity<?> getPendingKyc(@RequestParam String requesterEmail) {
+        public ResponseEntity<Object> getPendingKyc(@RequestParam String requesterEmail) {
             User requester = authService.findByEmail(requesterEmail);
             if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+                        .body(FORBIDDEN_ADMIN_MESSAGE);
             }
             return ResponseEntity.ok(kycService.findPendingKyc());
         }
     
         @PostMapping("/admin/kyc/review")
-        public ResponseEntity<?> reviewKyc(
+        public ResponseEntity<Object> reviewKyc(
                 @RequestParam String requesterEmail,
                 @RequestBody KycReviewRequest request) {
             User requester = authService.findByEmail(requesterEmail);
             if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+                        .body(FORBIDDEN_ADMIN_MESSAGE);
             }
             User result = kycService.reviewKyc(request.getEmail(), request.isApproved());
             if (result != null) {
@@ -138,13 +155,13 @@
         }
     
         @PostMapping("/admin/demote")
-        public ResponseEntity<?> demoteUser(
+        public ResponseEntity<Object> demoteUser(
                 @RequestParam String requesterEmail,
                 @RequestParam String email) {
             User requester = authService.findByEmail(requesterEmail);
             if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+                        .body(FORBIDDEN_ADMIN_MESSAGE);
             }
             User result = authService.demoteJastiper(email);
             if (result != null) {
@@ -154,13 +171,13 @@
         }
     
         @PostMapping("/admin/ban")
-        public ResponseEntity<?> banUser(
+        public ResponseEntity<Object> banUser(
                 @RequestParam String requesterEmail,
                 @RequestParam String email) {
             User requester = authService.findByEmail(requesterEmail);
             if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.");
+                        .body(FORBIDDEN_ADMIN_MESSAGE);
             }
             User result = authService.banUser(email);
             if (result != null) {
@@ -170,7 +187,7 @@
         }
     
         @PostMapping("/rating")
-        public ResponseEntity<?> addRating(
+        public ResponseEntity<Object> addRating(
                 @RequestParam String jastiperEmail,
                 @RequestParam int ratingScore) {
             try {
@@ -183,7 +200,7 @@
         }
 
         @GetMapping("/internal/user")
-        public ResponseEntity<?> getUserByUsername(@RequestParam String username) {
+        public ResponseEntity<Object> getUserByUsername(@RequestParam String username) {
             User user = authService.findByUsername(username);
             if (user != null) {
                 return ResponseEntity.ok(new UserInternalResponse(

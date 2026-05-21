@@ -10,10 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -63,10 +65,10 @@ public class AuthServiceImpl implements AuthService {
             String walletServiceUrl = walletServiceBaseUrl + "/wallets/users/" + savedUser.getId();
 
             restTemplate.postForObject(walletServiceUrl, null, String.class);
-            System.out.println("Berhasil request pembuatan wallet ke Wallet-Service");
+            log.info("Berhasil request pembuatan wallet ke Wallet-Service");
         }
         catch (Exception e) {
-            System.err.println("Gagal memanggil Wallet Service: " + e.getMessage());
+            log.error("Gagal memanggil Wallet Service: {}", e.getMessage());
         }
 
         return savedUser;
@@ -162,7 +164,7 @@ public class AuthServiceImpl implements AuthService {
             return count != null ? count : 0;
         }
         catch (Exception e) {
-            System.err.println("Gagal mengambil data dari Order Service: " + e.getMessage());
+            log.error("Gagal mengambil data dari Order Service: {}", e.getMessage());
             return 0;
         }
     }
