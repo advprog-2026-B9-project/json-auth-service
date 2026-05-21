@@ -8,7 +8,7 @@ updates:
       prefix: "ci"
 
   - package-ecosystem: "gradle"
-    directory: "/backend"
+    directory: "/b"
     schedule:
       interval: "weekly"
     commit-message:
