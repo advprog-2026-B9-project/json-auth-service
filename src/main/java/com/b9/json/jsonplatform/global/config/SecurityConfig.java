@@ -20,11 +20,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/products/**").permitAll()
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/wallets/**").permitAll()
-                        .requestMatchers("/transactions/**").permitAll()
-                        .requestMatchers("/api/orders/**", "/api/orders/checkout").permitAll()
+                        .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 );
