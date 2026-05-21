@@ -31,4 +31,4 @@ COPY --from=builder --chown=${USER_UID}:${USER_GID} /app/build/libs/*.jar app.ja
 
 ENTRYPOINT ["java", "-Xmx512M", "-Xms256M", "-jar", "app.jar"]
 
-EXPOSE 8080
+EXPOSE 8081
