@@ -45,7 +45,7 @@ class AuthControllerTest {
 
         Mockito.when(authService.registerUser(any(User.class))).thenReturn(user);
 
-        mockMvc.perform(post("/auth/register")
+        mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andExpect(status().isOk())
@@ -66,7 +66,7 @@ class AuthControllerTest {
         loginData.setEmail("test@example.com");
         loginData.setPassword("password123");
 
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginData)))
                 .andExpect(status().isOk())
@@ -81,7 +81,7 @@ class AuthControllerTest {
         loginData.setEmail("test@example.com");
         loginData.setPassword("wrong");
 
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginData)))
                 .andExpect(status().isBadRequest())
@@ -98,7 +98,7 @@ class AuthControllerTest {
 
         Mockito.when(authService.findAllUsers(null)).thenReturn(List.of(user1, user2));
 
-        mockMvc.perform(get("/auth/list")
+        mockMvc.perform(get("/api/v1/auth/list")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
@@ -111,7 +111,7 @@ class AuthControllerTest {
 
         Mockito.when(authService.findAllUsers("banned")).thenReturn(List.of(bannedUser));
 
-        mockMvc.perform(get("/auth/list")
+        mockMvc.perform(get("/api/v1/auth/list")
                         .param("status", "banned")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -124,7 +124,7 @@ class AuthControllerTest {
         Mockito.when(authService.findAllUsers("unknown"))
                 .thenThrow(new IllegalArgumentException("Status tidak valid: unknown"));
 
-        mockMvc.perform(get("/auth/list")
+        mockMvc.perform(get("/api/v1/auth/list")
                         .param("status", "unknown")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
