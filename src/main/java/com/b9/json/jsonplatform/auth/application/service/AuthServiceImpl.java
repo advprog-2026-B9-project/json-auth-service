@@ -62,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
 
         try {
-            String walletServiceUrl = walletServiceBaseUrl + "api/v1/wallets/users/" + savedUser.getId();
+            String walletServiceUrl = walletServiceBaseUrl + "/api/v1/wallets/users/" + savedUser.getId();
 
             restTemplate.postForObject(walletServiceUrl, null, String.class);
             log.info("Berhasil request pembuatan wallet ke Wallet-Service");
