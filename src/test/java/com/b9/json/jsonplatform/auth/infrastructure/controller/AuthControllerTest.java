@@ -5,6 +5,7 @@ import com.b9.json.jsonplatform.auth.application.service.KycService;
 import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
+import com.b9.json.jsonplatform.auth.infrastructure.security.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -35,14 +36,19 @@ class AuthControllerTest {
     @MockitoBean
     private KycService kycService;
 
+    @MockitoBean
+    private JwtUtil jwtUtil;
+
     // --- REGISTER & LOGIN TESTS ---
 
     @Test
     void testRegisterUser() throws Exception {
         User user = new User();
+        user.setId(java.util.UUID.randomUUID());
         user.setEmail("test@example.com");
         user.setPassword("password123");
         user.setUsername("customUser");
+        user.setRole(UserRole.TITIPERS);
 
         Mockito.when(authService.registerUser(any(User.class))).thenReturn(user);
 
@@ -70,9 +76,12 @@ class AuthControllerTest {
     @Test
     void testLoginUserSuccess() throws Exception {
         User user = new User();
+        user.setId(java.util.UUID.randomUUID());
         user.setEmail("test@example.com");
+        user.setRole(UserRole.TITIPERS);
 
         Mockito.when(authService.loginUser("test@example.com", "password123")).thenReturn(user);
+        Mockito.when(jwtUtil.generateToken(anyString(), anyString(), anyString())).thenReturn("dummy-token");
 
         User loginData = new User();
         loginData.setEmail("test@example.com");
