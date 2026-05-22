@@ -9,3 +9,6 @@ serta menambahkan index pada kolom database yang sering diakses (seperti status)
 Di sisi infrastruktur, tingginya latensi tersebut juga sangat dipengaruhi oleh konfigurasi connection pool (HikariCP) bawaan Spring Boot yang membatasi maksimal hanya 10 koneksi aktif secara bersamaan. 
 Saat aplikasi menerima lonjakan request, mayoritas request akan tertahan di dalam antrean panjang hanya untuk menunggu akses ke database yang kosong, sehingga menciptakan waktu tunggu artifisial yang signifikan. 
 Oleh karena itu, melakukan tuning dengan menaikkan batas maksimal connection pool pada konfigurasi aplikasi menjadi langkah yang tepat agar sistem dapat memproses beban kerja tinggi secara lebih stabil, cepat, dan responsif.
+
+## Monitoring
+![img.png](img.png)
