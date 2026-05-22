@@ -337,6 +337,19 @@ class AuthControllerTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Gagal melakukan review")));
     }
 
+    @Test
+    void testSubmitKycNullNik() throws Exception {
+        KycRequest request = new KycRequest();
+        request.setEmail("test@example.com");
+        request.setNikKtp(null);
+
+        mockMvc.perform(post("/api/v1/auth/kyc/submit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("NIK KTP tidak boleh kosong"));
+    }
+
     // --- ADMIN TESTS ---
 
     @Test

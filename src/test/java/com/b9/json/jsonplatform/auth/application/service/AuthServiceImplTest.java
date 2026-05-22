@@ -120,6 +120,65 @@ class AuthServiceImplTest {
         verify(restTemplate, never()).postForObject(anyString(), any(), any());
     }
 
+    @Test
+    void testRegisterUser_NullEmail_WithValidUsername_ShouldUseProvidedUsername() {
+        User userWithoutEmail = new User();
+        userWithoutEmail.setEmail(null);
+        userWithoutEmail.setUsername("validuser");
+        userWithoutEmail.setPassword("password123");
+
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+
+        User result = authService.registerUser(userWithoutEmail);
+
+        assertEquals("validuser", result.getUsername());
+    }
+
+    @Test
+    void testRegisterUser_NullEmail_WithNullUsername_ShouldUseFallback() {
+        User userWithoutEmailAndUsername = new User();
+        userWithoutEmailAndUsername.setEmail(null);
+        userWithoutEmailAndUsername.setUsername(null);
+        userWithoutEmailAndUsername.setPassword("password123");
+
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+
+        User result = authService.registerUser(userWithoutEmailAndUsername);
+
+        assertEquals("user_tanpa_email", result.getUsername());
+    }
+
+    @Test
+    void testRegisterUser_NullEmail_WithBlankUsername_ShouldUseFallback() {
+        User userWithBlankUsername = new User();
+        userWithBlankUsername.setEmail(null);
+        userWithBlankUsername.setUsername("   ");
+        userWithBlankUsername.setPassword("password123");
+
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+
+        User result = authService.registerUser(userWithBlankUsername);
+
+        assertEquals("user_tanpa_email", result.getUsername());
+    }
+
+    @Test
+    void testRegisterUser_WalletServiceThrowsException_ShouldCatchAndLogError() {
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+
+        when(restTemplate.postForObject(contains("/wallets/users/"), isNull(), eq(String.class)))
+                .thenThrow(new RuntimeException("Simulated Connection Error"));
+
+        User result = authService.registerUser(sampleUser);
+
+        assertNotNull(result);
+        verify(restTemplate, times(1)).postForObject(contains("/wallets/users/"), isNull(), eq(String.class));
+    }
+
     // ── loginUser ─────────────────────────────────────────────────────────────
 
     @Test
@@ -412,6 +471,18 @@ class AuthServiceImplTest {
         long count = authService.countSuccessfulTransactions("test@example.com");
 
         assertEquals(5, count);
+    }
+
+    @Test
+    void testCountSuccessfulTransactions_OrderServiceReturnsNull_ShouldReturnZero() {
+        when(userRepository.findByEmail("test@example.com")).thenReturn(sampleUser);
+
+        when(restTemplate.getForObject(contains("/orders/jastiper/"), eq(Long.class)))
+                .thenReturn(null);
+
+        long count = authService.countSuccessfulTransactions("test@example.com");
+
+        assertEquals(0, count);
     }
 
     // ── addRating ─────────────────────────────────────────────────────────────
