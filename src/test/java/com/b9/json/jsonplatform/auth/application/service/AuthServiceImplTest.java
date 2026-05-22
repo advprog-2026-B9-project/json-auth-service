@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -33,6 +34,9 @@ class AuthServiceImplTest {
 
     @Mock
     private RestTemplate restTemplate;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -88,11 +92,12 @@ class AuthServiceImplTest {
     @Test
     void testRegisterUser_PasswordShouldBeEncoded() {
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(passwordEncoder.encode("plainpassword")).thenReturn("encodedPassword");
 
         User result = authService.registerUser(sampleUser);
 
         assertNotEquals("plainpassword", result.getPassword());
-        assertTrue(result.getPassword().startsWith("$2a$"));
+        verify(passwordEncoder, times(1)).encode("plainpassword");
     }
 
     @Test
@@ -120,9 +125,7 @@ class AuthServiceImplTest {
 
     @Test
     void testLoginUser_ValidCredentials_ShouldReturnUser() {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        sampleUser.setPassword(encoder.encode("plainpassword"));
-
+        when(passwordEncoder.matches("plainpassword", sampleUser.getPassword())).thenReturn(true);
         when(userRepository.findByEmail("test@example.com")).thenReturn(sampleUser);
 
         User result = authService.loginUser("test@example.com", "plainpassword");
@@ -133,8 +136,7 @@ class AuthServiceImplTest {
 
     @Test
     void testLoginUser_WrongPassword_ShouldReturnNull() {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        sampleUser.setPassword(encoder.encode("correctpassword"));
+        when(passwordEncoder.matches("wrongpassword", sampleUser.getPassword())).thenReturn(false);
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(sampleUser);
 

@@ -145,12 +145,15 @@ public class AuthController {
         return ResponseEntity.badRequest().body("User dengan email tersebut tidak ditemukan");
     }
 
+    private boolean isNotAdmin(String requesterEmail) {
+        User requester = authService.findByEmail(requesterEmail);
+        return requester == null || !UserRole.ADMIN.equals(requester.getRole());
+    }
+
     @GetMapping("/admin/kyc/pending")
     public ResponseEntity<Object> getPendingKyc(@RequestParam String requesterEmail) {
-        User requester = authService.findByEmail(requesterEmail);
-        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(FORBIDDEN_ADMIN_MESSAGE);
+        if (isNotAdmin(requesterEmail)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
         }
         return ResponseEntity.ok(kycService.findPendingKyc());
     }
@@ -159,11 +162,10 @@ public class AuthController {
     public ResponseEntity<Object> reviewKyc(
             @RequestParam String requesterEmail,
             @RequestBody KycReviewRequest request) {
-        User requester = authService.findByEmail(requesterEmail);
-        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(FORBIDDEN_ADMIN_MESSAGE);
+        if (isNotAdmin(requesterEmail)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
         }
+
         User result = kycService.reviewKyc(request.getEmail(), request.isApproved());
         if (result != null) {
             String message = request.isApproved() ?
@@ -178,11 +180,10 @@ public class AuthController {
     public ResponseEntity<Object> demoteUser(
             @RequestParam String requesterEmail,
             @RequestParam String email) {
-        User requester = authService.findByEmail(requesterEmail);
-        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(FORBIDDEN_ADMIN_MESSAGE);
+        if (isNotAdmin(requesterEmail)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
         }
+
         User result = authService.demoteJastiper(email);
         if (result != null) {
             return ResponseEntity.ok("User berhasil di-demote menjadi TITIPERS.");
@@ -194,11 +195,10 @@ public class AuthController {
     public ResponseEntity<Object> banUser(
             @RequestParam String requesterEmail,
             @RequestParam String email) {
-        User requester = authService.findByEmail(requesterEmail);
-        if (requester == null || !UserRole.ADMIN.equals(requester.getRole())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(FORBIDDEN_ADMIN_MESSAGE);
+        if (isNotAdmin(requesterEmail)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
         }
+
         User result = authService.banUser(email);
         if (result != null) {
             return ResponseEntity.ok("User berhasil di-banned.");

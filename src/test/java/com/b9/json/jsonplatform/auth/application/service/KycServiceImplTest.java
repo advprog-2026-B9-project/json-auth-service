@@ -101,28 +101,19 @@ class KycServiceImplTest {
         pendingUser.setEmail("pending@example.com");
         pendingUser.setKycStatus(KycStatus.PENDING_VERIFICATION);
 
-        User unverifiedUser = new User();
-        unverifiedUser.setEmail("unverified@example.com");
-        unverifiedUser.setKycStatus(KycStatus.UNVERIFIED);
-
-        User verifiedUser = new User();
-        verifiedUser.setEmail("verified@example.com");
-        verifiedUser.setKycStatus(KycStatus.VERIFIED);
-
-        when(userRepository.findAll()).thenReturn(List.of(pendingUser, unverifiedUser, verifiedUser));
+        when(userRepository.findByKycStatus(KycStatus.PENDING_VERIFICATION))
+                .thenReturn(List.of(pendingUser));
 
         List<User> result = kycService.findPendingKyc();
 
         assertEquals(1, result.size());
-        assertEquals("pending@example.com", result.get(0).getEmail());
+        assertEquals("pending@example.com", result.getFirst().getEmail());
     }
 
     @Test
     void testFindPendingKyc_NoPendingUsers_ShouldReturnEmptyList() {
-        User unverifiedUser = new User();
-        unverifiedUser.setKycStatus(KycStatus.UNVERIFIED);
-
-        when(userRepository.findAll()).thenReturn(List.of(unverifiedUser));
+        when(userRepository.findByKycStatus(KycStatus.PENDING_VERIFICATION))
+                .thenReturn(List.of());
 
         List<User> result = kycService.findPendingKyc();
 
@@ -139,7 +130,8 @@ class KycServiceImplTest {
         pending2.setEmail("pending2@example.com");
         pending2.setKycStatus(KycStatus.PENDING_VERIFICATION);
 
-        when(userRepository.findAll()).thenReturn(List.of(pending1, pending2));
+        when(userRepository.findByKycStatus(KycStatus.PENDING_VERIFICATION))
+                .thenReturn(List.of(pending1, pending2));
 
         List<User> result = kycService.findPendingKyc();
 

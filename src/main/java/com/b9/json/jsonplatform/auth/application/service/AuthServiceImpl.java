@@ -4,7 +4,6 @@ import com.b9.json.jsonplatform.auth.domain.KycStatus;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +29,10 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.order-service.base-url}")
     private String orderServiceBaseUrl;
 
-    public AuthServiceImpl(UserRepository userRepository, RestTemplate restTemplate) {
+    public AuthServiceImpl(UserRepository userRepository, RestTemplate restTemplate, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.restTemplate = restTemplate;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        this.passwordEncoder = passwordEncoder;
     }
 
     private String resolveUsername(String requestedUsername, String email) {
