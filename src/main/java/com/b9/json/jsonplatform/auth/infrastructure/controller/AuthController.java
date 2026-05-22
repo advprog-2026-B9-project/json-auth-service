@@ -9,7 +9,9 @@
     import org.springframework.http.HttpStatus;
     import org.springframework.http.ResponseEntity;
     import org.springframework.web.bind.annotation.*;
-    
+
+    import java.util.UUID;
+
     @RestController
     @RequestMapping("/api/v1/auth")
     public class AuthController {
@@ -221,10 +223,11 @@
         }
 
         @GetMapping("/internal/user")
-        public ResponseEntity<Object> getUserByUsername(@RequestParam String username) {
-            User user = authService.findByUsername(username);
+        public ResponseEntity<Object> getUserById(@RequestParam UUID id) {
+            User user = authService.findById(id);
             if (user != null) {
                 return ResponseEntity.ok(new UserInternalResponse(
+                        user.getId(),
                         user.getUsername(),
                         user.getFullName(),
                         user.getPhoneNumber()
