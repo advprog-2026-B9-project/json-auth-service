@@ -1,13 +1,11 @@
     package com.b9.json.jsonplatform.auth.infrastructure.controller;
     
-    import com.b9.json.jsonplatform.auth.application.dto.LoginRequest;
-    import com.b9.json.jsonplatform.auth.application.dto.RegisterRequest;
-    import com.b9.json.jsonplatform.auth.application.dto.UpdateProfileRequest;
-    import com.b9.json.jsonplatform.auth.application.dto.UserInternalResponse;
+    import com.b9.json.jsonplatform.auth.application.dto.*;
     import com.b9.json.jsonplatform.auth.application.service.AuthService;
     import com.b9.json.jsonplatform.auth.application.service.KycService;
     import com.b9.json.jsonplatform.auth.domain.User;
     import com.b9.json.jsonplatform.auth.domain.UserRole;
+    import com.b9.json.jsonplatform.auth.infrastructure.security.JwtUtil;
     import org.springframework.http.HttpStatus;
     import org.springframework.http.ResponseEntity;
     import org.springframework.web.bind.annotation.*;
@@ -19,10 +17,12 @@
 
         private final AuthService authService;
         private final KycService kycService;
+        private final JwtUtil jwtUtil;
 
-        public AuthController(AuthService authService, KycService kycService) {
+        public AuthController(AuthService authService, KycService kycService, JwtUtil jwtUtil) {
             this.authService = authService;
             this.kycService = kycService;
+            this.jwtUtil = jwtUtil;
         }
 
         @PostMapping("/register")
@@ -37,7 +37,15 @@
                 user.setAddress(request.getAddress());
 
                 User savedUser = authService.registerUser(user);
-                return ResponseEntity.ok(savedUser);
+                RegisterResponse response = new RegisterResponse(
+                        savedUser.getId().toString(),
+                        savedUser.getEmail(),
+                        savedUser.getUsername(),
+                        savedUser.getRole().name(),
+                        "Registrasi berhasil!"
+                );
+
+                return ResponseEntity.ok(response);
             }
             catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body(e.getMessage());
@@ -48,7 +56,20 @@
         public ResponseEntity<Object> loginUser(@RequestBody LoginRequest loginData) {
             User loggedInUser = authService.loginUser(loginData.getEmail(), loginData.getPassword());
             if (loggedInUser != null) {
-                return ResponseEntity.ok(loggedInUser);
+                String token = jwtUtil.generateToken(
+                        loggedInUser.getEmail(),
+                        loggedInUser.getRole().name(),
+                        loggedInUser.getId().toString()
+                );
+
+                LoginResponse response = new LoginResponse(
+                        token,
+                        loggedInUser.getEmail(),
+                        loggedInUser.getUsername(),
+                        loggedInUser.getRole().name()
+                );
+
+                return ResponseEntity.ok(response);
             }
             return ResponseEntity.badRequest().body("Email atau password salah!");
         }
