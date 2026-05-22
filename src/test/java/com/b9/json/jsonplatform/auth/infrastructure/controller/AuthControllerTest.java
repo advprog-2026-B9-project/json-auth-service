@@ -17,6 +17,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -184,24 +186,32 @@ class AuthControllerTest {
     }
 
     @Test
-    void testGetUserByUsernameSuccess() throws Exception {
+    void testGetUserByIdSuccess() throws Exception {
+        UUID userId = java.util.UUID.randomUUID();
         User user = new User();
+        user.setId(userId);
         user.setUsername("testuser");
         user.setFullName("Test User");
-        Mockito.when(authService.findByUsername("testuser")).thenReturn(user);
+        user.setPhoneNumber("08123456789");
+
+        Mockito.when(authService.findById(userId)).thenReturn(user);
 
         mockMvc.perform(get("/api/v1/auth/internal/user")
-                        .param("username", "testuser"))
+                        .param("id", userId.toString())) // Parameter sekarang "id"
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("testuser"));
+                .andExpect(jsonPath("$.id").value(userId.toString())) // Verifikasi field id baru
+                .andExpect(jsonPath("$.username").value("testuser"))
+                .andExpect(jsonPath("$.fullName").value("Test User"))
+                .andExpect(jsonPath("$.phoneNumber").value("08123456789"));
     }
 
     @Test
-    void testGetUserByUsernameNotFound() throws Exception {
-        Mockito.when(authService.findByUsername("ghost")).thenReturn(null);
+    void testGetUserByIdNotFound() throws Exception {
+        UUID randomId = java.util.UUID.randomUUID();
+        Mockito.when(authService.findById(randomId)).thenReturn(null);
 
         mockMvc.perform(get("/api/v1/auth/internal/user")
-                        .param("username", "ghost"))
+                        .param("id", randomId.toString()))
                 .andExpect(status().isNotFound());
     }
 
