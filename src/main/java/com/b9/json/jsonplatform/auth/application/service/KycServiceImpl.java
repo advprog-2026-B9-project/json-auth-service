@@ -32,9 +32,7 @@ public class KycServiceImpl implements KycService {
 
     @Override
     public List<User> findPendingKyc() {
-        return userRepository.findAll().stream()
-                .filter(u -> KycStatus.PENDING_VERIFICATION.equals(u.getKycStatus()))
-                .toList();
+        return userRepository.findByKycStatus(KycStatus.PENDING_VERIFICATION);
     }
 
     @Override

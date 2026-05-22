@@ -1,5 +1,7 @@
 package com.b9.json.jsonplatform.auth.infrastructure.controller;
 
+import com.b9.json.jsonplatform.auth.application.dto.KycRequest;
+import com.b9.json.jsonplatform.auth.application.dto.KycReviewRequest;
 import com.b9.json.jsonplatform.auth.application.service.AuthService;
 import com.b9.json.jsonplatform.auth.application.service.KycService;
 import com.b9.json.jsonplatform.auth.domain.KycStatus;

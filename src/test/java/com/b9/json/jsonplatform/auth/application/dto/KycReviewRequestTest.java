@@ -1,4 +1,4 @@
-package com.b9.json.jsonplatform.auth.infrastructure.controller;
+package com.b9.json.jsonplatform.auth.application.dto;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
