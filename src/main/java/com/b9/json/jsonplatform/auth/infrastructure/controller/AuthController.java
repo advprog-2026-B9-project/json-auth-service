@@ -64,8 +64,8 @@ public class AuthController {
             );
 
             LoginResponse response = new LoginResponse(
-                    token,
                     loggedInUser.getId().toString(),
+                    token,
                     loggedInUser.getEmail(),
                     loggedInUser.getUsername(),
                     loggedInUser.getRole().name()
