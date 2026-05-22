@@ -62,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
 
         try {
-            String walletServiceUrl = walletServiceBaseUrl + "/wallets/users/" + savedUser.getId();
+            String walletServiceUrl = walletServiceBaseUrl + "api/v1/wallets/users/" + savedUser.getId();
 
             restTemplate.postForObject(walletServiceUrl, null, String.class);
             log.info("Berhasil request pembuatan wallet ke Wallet-Service");
@@ -158,7 +158,7 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) return 0;
 
         try {
-            String orderServiceUrl = orderServiceBaseUrl + "/api/orders/jastiper/" + user.getId() + "/stats";
+            String orderServiceUrl = orderServiceBaseUrl + "/api/v1/orders/jastiper/" + user.getId() + "/stats";
             Long count = restTemplate.getForObject(orderServiceUrl, Long.class);
 
             return count != null ? count : 0;
