@@ -46,6 +46,8 @@ public class User {
     private String nikKtp;
     private String ktpImageUrl;
 
+    private String profileImageUrl;
+
     @Column(nullable = false)
     private boolean isBanned = false;
 

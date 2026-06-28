@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  json-auth-service:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_URL=jdbc:postgresql://aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres
+      - DB_USERNAME=postgres.iudbpajrwkpemyrjvmoi
+      - DB_PASSWORD=Ykvp8JSh1euVDkY1
+      - WALLET_SERVICE_URL=https://json-wallet-service.onrender.com
+      - ORDER_SERVICE_URL=https://just-edy-b-abigail-namaratonggi-p-2406495773-e5b1df42.koyeb.app
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - json-auth-service
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus

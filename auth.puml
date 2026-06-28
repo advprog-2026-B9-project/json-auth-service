@@ -1,0 +1,41 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title C4 Component Diagram untuk JSON Auth Service
+
+Container(spa, "Client Application", "Web / Mobile App", "Aplikasi yang digunakan oleh pengguna (Titipers, Jastiper, Admin) untuk mengakses platform.")
+
+System_Boundary(auth_service_boundary, "JSON Auth Service") {
+
+    Component(auth_controller, "Auth Controller", "Spring REST Controller", "Menyediakan endpoint REST API untuk registrasi, login, manajemen profil, KYC, dan aksi admin.")
+
+    Component(jwt_util, "JWT Util", "Spring Component", "Bertanggung jawab untuk menghasilkan token JWT untuk sesi autentikasi pengguna.")
+
+    Component(auth_service, "Auth Service", "Spring Service", "Menangani logika bisnis utama: registrasi, otentikasi, manajemen pengguna, rating, dan komunikasi dengan service lain.")
+
+    Component(kyc_service, "KYC Service", "Spring Service", "Menangani logika pengajuan (submit) dan peninjauan (review) data KYC pengguna.")
+
+    Component(user_repo, "User Repository", "Spring Data JPA", "Menyediakan interface untuk operasi CRUD terhadap entitas User di dalam database.")
+
+    Component(security_config, "Security Config", "Spring Configuration", "Mengonfigurasi keamanan HTTP, menonaktifkan CORS/CSRF, dan menyediakan Password Encoder (BCrypt).")
+}
+
+ContainerDb(database, "Auth Database", "PostgreSQL", "Menyimpan data pengguna, kredensial yang di-hash, peran (role), dan status KYC.")
+Container(wallet_service, "Wallet Service", "Software System", "Layanan eksternal yang mengelola dompet digital pengguna.")
+Container(order_service, "Order Service", "Software System", "Layanan eksternal yang mengelola pesanan (order) platform.")
+
+Rel(spa, auth_controller, "Membuat request API", "JSON/HTTPS")
+Rel(spa, security_config, "Difilter oleh", "HTTPS")
+
+Rel(auth_controller, auth_service, "Menggunakan", "Panggilan method")
+Rel(auth_controller, kyc_service, "Menggunakan", "Panggilan method")
+Rel(auth_controller, jwt_util, "Menghasilkan token", "Panggilan method")
+
+Rel(auth_service, user_repo, "Membaca dari dan menulis ke", "Panggilan method")
+Rel(kyc_service, user_repo, "Membaca dari dan menulis ke", "Panggilan method")
+
+Rel(auth_service, wallet_service, "Memicu pembuatan wallet baru", "JSON/HTTPS via RestTemplate")
+Rel(auth_service, order_service, "Menarik statistik transaksi sukses", "JSON/HTTPS via RestTemplate")
+
+Rel(user_repo, database, "Membaca dan menulis data", "JDBC/JPA")
+@enduml

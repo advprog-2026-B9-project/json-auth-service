@@ -9,4 +9,5 @@ public class UpdateProfileRequest {
     private String username;
     private String phoneNumber;
     private String address;
+    private String profileImageUrl;
 }

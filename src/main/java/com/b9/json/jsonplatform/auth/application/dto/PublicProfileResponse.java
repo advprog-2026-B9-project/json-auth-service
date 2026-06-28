@@ -14,4 +14,5 @@ public class PublicProfileResponse {
     private double rating;
     private int totalReviews;
     private long totalSuccessfulTransactions;
+    private String profileImageUrl;
 }
