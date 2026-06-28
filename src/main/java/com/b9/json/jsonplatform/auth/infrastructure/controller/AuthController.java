@@ -148,27 +148,13 @@ public class AuthController {
         return ResponseEntity.badRequest().body("User dengan email tersebut tidak ditemukan");
     }
 
-    private boolean isNotAdmin(String requesterEmail) {
-        User requester = authService.findByEmail(requesterEmail);
-        return requester == null || !UserRole.ADMIN.equals(requester.getRole());
-    }
-
     @GetMapping("/admin/kyc/pending")
-    public ResponseEntity<Object> getPendingKyc(@RequestParam String requesterEmail) {
-        if (isNotAdmin(requesterEmail)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
-        }
+    public ResponseEntity<Object> getPendingKyc() {
         return ResponseEntity.ok(kycService.findPendingKyc());
     }
 
     @PostMapping("/admin/kyc/review")
-    public ResponseEntity<Object> reviewKyc(
-            @RequestParam String requesterEmail,
-            @RequestBody KycReviewRequest request) {
-        if (isNotAdmin(requesterEmail)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
-        }
-
+    public ResponseEntity<Object> reviewKyc(@RequestBody KycReviewRequest request) {
         User result = kycService.reviewKyc(request.getEmail(), request.isApproved());
         if (result != null) {
             String message = request.isApproved() ?
@@ -180,13 +166,7 @@ public class AuthController {
     }
 
     @PostMapping("/admin/demote")
-    public ResponseEntity<Object> demoteUser(
-            @RequestParam String requesterEmail,
-            @RequestParam String email) {
-        if (isNotAdmin(requesterEmail)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
-        }
-
+    public ResponseEntity<Object> demoteUser(@RequestParam String email) {
         User result = authService.demoteJastiper(email);
         if (result != null) {
             return ResponseEntity.ok("User berhasil di-demote menjadi TITIPERS.");
@@ -195,13 +175,7 @@ public class AuthController {
     }
 
     @PostMapping("/admin/ban")
-    public ResponseEntity<Object> banUser(
-            @RequestParam String requesterEmail,
-            @RequestParam String email) {
-        if (isNotAdmin(requesterEmail)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(FORBIDDEN_ADMIN_MESSAGE);
-        }
-
+    public ResponseEntity<Object> banUser(@RequestParam String email) {
         User result = authService.banUser(email);
         if (result != null) {
             return ResponseEntity.ok("User berhasil di-banned.");
