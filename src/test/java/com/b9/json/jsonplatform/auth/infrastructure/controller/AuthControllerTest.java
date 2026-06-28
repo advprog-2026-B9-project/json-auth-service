@@ -289,21 +289,14 @@ class AuthControllerTest {
 
     @Test
     void testGetPendingKycSuccess() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(kycService.findPendingKyc()).thenReturn(java.util.List.of(new User()));
 
-        mockMvc.perform(get("/api/v1/auth/admin/kyc/pending")
-                        .param("requesterEmail", "admin@example.com"))
+        mockMvc.perform(get("/api/v1/auth/admin/kyc/pending"))
                 .andExpect(status().isOk());
     }
 
     @Test
     void testReviewKycRejected() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(kycService.reviewKyc("user@example.com", false)).thenReturn(new User());
 
         KycReviewRequest request = new KycReviewRequest();
@@ -311,7 +304,6 @@ class AuthControllerTest {
         request.setApproved(false);
 
         mockMvc.perform(post("/api/v1/auth/admin/kyc/review")
-                        .param("requesterEmail", "admin@example.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -320,9 +312,6 @@ class AuthControllerTest {
 
     @Test
     void testReviewKycFailure() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(kycService.reviewKyc(anyString(), anyBoolean())).thenReturn(null);
 
         KycReviewRequest request = new KycReviewRequest();
@@ -330,7 +319,6 @@ class AuthControllerTest {
         request.setApproved(true);
 
         mockMvc.perform(post("/api/v1/auth/admin/kyc/review")
-                        .param("requesterEmail", "admin@example.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -353,21 +341,7 @@ class AuthControllerTest {
     // --- ADMIN TESTS ---
 
     @Test
-    void testGetPendingKycForbidden() throws Exception {
-        User notAdmin = new User();
-        notAdmin.setRole(UserRole.TITIPERS);
-        Mockito.when(authService.findByEmail("user@example.com")).thenReturn(notAdmin);
-
-        mockMvc.perform(get("/api/v1/auth/admin/kyc/pending")
-                        .param("requesterEmail", "user@example.com"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
     void testReviewKycSuccess() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(kycService.reviewKyc("user@example.com", true)).thenReturn(new User());
 
         KycReviewRequest request = new KycReviewRequest();
@@ -375,7 +349,6 @@ class AuthControllerTest {
         request.setApproved(true);
 
         mockMvc.perform(post("/api/v1/auth/admin/kyc/review")
-                        .param("requesterEmail", "admin@example.com")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -384,39 +357,27 @@ class AuthControllerTest {
 
     @Test
     void testDemoteUserSuccess() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(authService.demoteJastiper("jastiper@example.com")).thenReturn(new User());
 
         mockMvc.perform(post("/api/v1/auth/admin/demote")
-                        .param("requesterEmail", "admin@example.com")
                         .param("email", "jastiper@example.com"))
                 .andExpect(status().isOk());
     }
 
     @Test
     void testBanUserSuccess() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(authService.banUser("user@example.com")).thenReturn(new User());
 
         mockMvc.perform(post("/api/v1/auth/admin/ban")
-                        .param("requesterEmail", "admin@example.com")
                         .param("email", "user@example.com"))
                 .andExpect(status().isOk());
     }
 
     @Test
     void testDemoteUserFailure() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(authService.demoteJastiper("ghost@example.com")).thenReturn(null);
 
         mockMvc.perform(post("/api/v1/auth/admin/demote")
-                        .param("requesterEmail", "admin@example.com")
                         .param("email", "ghost@example.com"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Gagal demote")));
@@ -424,55 +385,12 @@ class AuthControllerTest {
 
     @Test
     void testBanUserFailure() throws Exception {
-        User admin = new User();
-        admin.setRole(UserRole.ADMIN);
-        Mockito.when(authService.findByEmail("admin@example.com")).thenReturn(admin);
         Mockito.when(authService.banUser("ghost@example.com")).thenReturn(null);
 
         mockMvc.perform(post("/api/v1/auth/admin/ban")
-                        .param("requesterEmail", "admin@example.com")
                         .param("email", "ghost@example.com"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Gagal melakukan banned")));
-    }
-
-    @Test
-    void testReviewKycForbidden() throws Exception {
-        User notAdmin = new User();
-        notAdmin.setRole(UserRole.TITIPERS); // Sengaja dibuat bukan admin
-        Mockito.when(authService.findByEmail("user@example.com")).thenReturn(notAdmin);
-
-        KycReviewRequest request = new KycReviewRequest();
-        request.setEmail("target@example.com");
-        request.setApproved(true);
-
-        mockMvc.perform(post("/api/v1/auth/admin/kyc/review")
-                        .param("requesterEmail", "user@example.com")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testDemoteUserForbidden() throws Exception {
-        Mockito.when(authService.findByEmail("ghost@example.com")).thenReturn(null);
-
-        mockMvc.perform(post("/api/v1/auth/admin/demote")
-                        .param("requesterEmail", "ghost@example.com")
-                        .param("email", "target@example.com"))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void testBanUserForbidden() throws Exception {
-        User notAdmin = new User();
-        notAdmin.setRole(UserRole.JASTIPER); // Sengaja dibuat bukan admin
-        Mockito.when(authService.findByEmail("jastiper@example.com")).thenReturn(notAdmin);
-
-        mockMvc.perform(post("/api/v1/auth/admin/ban")
-                        .param("requesterEmail", "jastiper@example.com")
-                        .param("email", "target@example.com"))
-                .andExpect(status().isForbidden());
     }
 
     // --- RATING TESTS ---

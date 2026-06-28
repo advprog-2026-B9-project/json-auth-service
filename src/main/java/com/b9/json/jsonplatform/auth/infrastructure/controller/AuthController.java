@@ -6,7 +6,6 @@ import com.b9.json.jsonplatform.auth.application.service.KycService;
 import com.b9.json.jsonplatform.auth.domain.User;
 import com.b9.json.jsonplatform.auth.domain.UserRole;
 import com.b9.json.jsonplatform.auth.infrastructure.security.JwtUtil;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,8 +14,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
-    private static final String FORBIDDEN_ADMIN_MESSAGE = "Akses ditolak. Hanya Admin yang dapat mengakses fitur ini.";
-
     private final AuthService authService;
     private final KycService kycService;
     private final JwtUtil jwtUtil;
