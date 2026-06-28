@@ -83,6 +83,7 @@ public class AuthController {
         updatedUserData.setUsername(request.getUsername());
         updatedUserData.setPhoneNumber(request.getPhoneNumber());
         updatedUserData.setAddress(request.getAddress());
+        updatedUserData.setProfileImageUrl(request.getProfileImageUrl());
 
         User savedUser = authService.updateProfile(email, updatedUserData);
         if (savedUser != null) {
@@ -113,6 +114,7 @@ public class AuthController {
             response.setBanned(user.isBanned());
             response.setRating(user.getRating());
             response.setTotalReviews(user.getTotalReviews());
+            response.setProfileImageUrl(user.getProfileImageUrl());
 
             if (UserRole.JASTIPER.equals(user.getRole())) {
                 response.setTotalSuccessfulTransactions(

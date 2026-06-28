@@ -90,6 +90,7 @@ public class AuthServiceImpl implements AuthService {
             existingUser.setUsername(resolveUsername(updatedUser.getUsername(), existingUser.getEmail()));
             existingUser.setPhoneNumber(updatedUser.getPhoneNumber());
             existingUser.setAddress(updatedUser.getAddress());
+            existingUser.setProfileImageUrl(updatedUser.getProfileImageUrl());
             return userRepository.save(existingUser);
         }
         return null;
